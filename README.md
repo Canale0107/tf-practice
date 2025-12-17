@@ -1,135 +1,116 @@
-# AWS Infrastructure as Code - Terraform Practice Project
+# Personal Notes App – AWS/Terraform 総合学習プロジェクト
 
 [![Terraform CI](https://github.com/Canale0107/tf-practice/actions/workflows/terraform.yml/badge.svg)](https://github.com/Canale0107/tf-practice/actions/workflows/terraform.yml)
 
-このプロジェクトは、モダンな AWS インフラ開発を学習するための Terraform サンプルプロジェクトです。
-GitOps による CI/CD とアジャイルな IaC 開発を体験できるように設計されています。
+---
 
-## プロジェクト構成
+## プロジェクト概要
+
+本リポジトリは「パーソナルノート/メモアプリ」を AWS インフラ（サーバーレス/モダン CI/CD）と Terraform で実践する学習用サンプルです。
+主要な AWS サービスと IaC の設計・運用を、実用性ある形で段階的に習得できます。
+
+### なぜこのプロジェクト？
+
+- **学習効率**: 認証、ストレージ、API 設計、CI/CD など幅広く体験
+- **拡張性**: ライトな MVP(最小機能)から段階拡張へ対応
+- **実用性**: Markdown メモの作成・編集・検索可能
+
+---
+
+## 機能要件（MVP & Phase2）
+
+### MVP（最小機能）
+
+- **ユーザー認証**: Cognito によるサインアップ/サインイン、セッション管理
+- **ノート管理（CRUD）**:
+  - ノート作成/一覧/詳細取得/更新/削除（API 経由）
+- **UI**: シンプルな Web（HTML, CSS, JS）を S3 静的ホスティング
+
+#### データモデル（DynamoDB）
+
+| Key       | 用途                       |
+| --------- | -------------------------- |
+| userId    | Cognito ユーザー ID (Hash) |
+| noteId    | ノート ID (UUID, Range)    |
+| title     | タイトル                   |
+| content   | 本文（Markdown）           |
+| createdAt | 作成日時                   |
+| updatedAt | 更新日時                   |
+| tags      | タグ（配列、任意）         |
+
+#### API エンドポイント
+
+| メソッド | パス            | 説明           |
+| -------- | --------------- | -------------- |
+| GET      | /notes          | ノート一覧取得 |
+| POST     | /notes          | ノート作成     |
+| GET      | /notes/{noteId} | ノート詳細取得 |
+| PUT      | /notes/{noteId} | ノート更新     |
+| DELETE   | /notes/{noteId} | ノート削除     |
+
+### Phase2 以降（拡張機能例）
+
+- ノート検索（DynamoDB GSI）・タグ絞り込み
+- ファイル添付・画像管理（S3,署名付き URL）
+- ノート共有リンク・公開/非公開設定
+- カテゴリ/フォルダ管理
+
+---
+
+## 利用 AWS サービス
+
+- Cognito: ユーザー認証
+- API Gateway: REST API (Cognito 認可)
+- Lambda: API バックエンド
+- DynamoDB: NoSQL DB (NoteTable)
+- S3: 静的 Web&ファイルホスティング
+- CodeBuild/CodePipeline: CI/CD
+
+---
+
+## ディレクトリ構成
 
 ```
 tf-practice/
-├── adr/                    # Architecture Decision Records
-├── modules/                # 再利用可能なTerraformモジュール
-│   ├── api-gateway/
-│   ├── lambda/
-│   ├── cognito/
-│   ├── dynamodb/
-│   └── s3/
-├── environments/           # 環境別の設定
-│   ├── dev/
-│   ├── staging/
-│   └── prod/
-├── docs/                   # 設計書（テキストベース）
-├── .github/                # GitHub Actionsワークフロー
-│   └── workflows/
-├── ci-cd/                  # CI/CD設定
-│   └── aws/                # AWS CodePipeline/CodeBuild設定
-└── diagrams/               # Draw.ioダイアグラム
+├── README.md
+├── environments/           # dev, prod, staging別Tf構成
+├── modules/                # サービス毎モジュール群
+├── docs/                   # 運用/設計/提案ドキュメント
+├── adr/                    # 重要設計意思決定(ADR)
+├── diagrams/               # 設計図（draw.io等）
+├── lambda-functions/       # Lambda用コード
+└── ci-cd/                  # CI/CD構成例
 ```
 
-## 使用する AWS サービス
+---
 
-- **API Gateway**: RESTful API のエンドポイント
-- **Lambda**: サーバーレス関数
-- **Cognito**: 認証・認可
-- **DynamoDB**: NoSQL データベース
-- **S3**: オブジェクトストレージ（静的ファイル、Lambda デプロイパッケージなど）
-- **CodeBuild**: ビルドサービス
-- **CodePipeline**: CI/CD パイプライン
-- **Step Functions**: ワークフローオーケストレーション
+## クイックスタート
 
-## 開発フロー
+- [docs/getting-started.md](docs/getting-started.md): 初期セットアップ
+- [docs/deployment-guide.md](docs/deployment-guide.md): 詳細デプロイ&コスト注意
+- [docs/cicd-guide.md](docs/cicd-guide.md): CI/CD 運用ガイド
 
-1. **MVP**: 最小限の構成から開始
-2. **ADR**: 重要な設計決定を ADR として記録
-3. **段階的拡張**: 機能を追加しながらインフラを拡張
-4. **GitOps**: コードの変更が自動的にインフラに反映
-
-## セットアップ
-
-### 前提条件
-
-- Terraform >= 1.0
-- AWS CLI が設定済み
-- AWS アカウントへのアクセス権限
-
-### デプロイ手順
-
-**初めてデプロイする場合は、まず [デプロイガイド](docs/deployment-guide.md) を読んでください。**
-
-デプロイガイドには以下が含まれています：
-
-- AWS アカウントとの紐づけ方法
-- AWS 認証情報の設定方法
-- デプロイ手順の詳細
-- **AWS 料金についての説明**
-
-### 初期セットアップ
+### セットアップ最短例
 
 ```bash
-# Terraformの初期化
 cd environments/dev
+cp terraform.tfvars.example terraform.tfvars
 terraform init
-
-# 実行計画の確認
 terraform plan
-
-# インフラの作成
 terraform apply
 ```
 
 ---
 
-## CI/CD & バッジ表示
+## CI/CD について
 
-本プロジェクトは GitHub Actions による CI/CD（plan, validate 等まで自動実行、apply/destroy は手作業のみ）を採用しています。
+- GitHub Actions を利用した自動 plan/validate。apply/destroy は手作業
+- `ci-cd/.github/workflows/terraform.yml`・`ci-cd/aws/buildspec.yml` 参照
 
-- `ci-cd/.github/workflows/terraform.yml` で `terraform fmt`・`validate`・`plan` までを自動化。
-- `terraform apply` や `terraform destroy` は**必ず各自コマンドラインで実行してください**。
-- main ブランチに push/PR された際に CI が実行されます。
+## 設計ドキュメント・背景
 
----
+- [docs/project-proposal.md](docs/project-proposal.md): アイデア/要件/仕様詳細
+- [docs/goal_structure_20251217.md](docs/goal_structure_20251217.md): 目標ディレクトリ構成・進捗ロードマップ
+- [adr/](adr/): 主要意思決定ドキュメント
+- [diagrams/](diagrams/): draw.io 構成図
 
-## ADR（Architecture Decision Records）
-
-重要な設計決定は `adr/` ディレクトリに記録されます。
-
-## 設計書
-
-- テキストベースの設計書: `docs/`
-  - [**デプロイガイド**](docs/deployment-guide.md) - AWS アカウントへのデプロイ手順と料金情報
-  - [クイックスタートガイド](docs/getting-started.md)
-  - [ADR ガイド](docs/adr-guide.md)
-  - [CI/CD ガイド](docs/cicd-guide.md)
-- Draw.io ダイアグラム: `diagrams/`
-
-## Draw.io での図作成
-
-1. [draw.io](https://app.diagrams.net/) または Draw.io Desktop を開く
-2. AWS アイコンライブラリを有効化（More Shapes > AWS19）
-3. `docs/goal_structure_20251217.md` の構成や ADR を参考に図を作成
-4. `.drawio` 形式で `diagrams/` に保存
-
----
-
-## 作成した VPC などの AWS リソースを削除するには？
-
-Terraform 管理下の VPC 等リソースは、対象ディレクトリで下記コマンド実行で安全に削除できます。
-
-```sh
-terraform destroy
-```
-
-- 削除リストを確認後 "yes"と入力で実行できます。
-
-## 次のステップ
-
-1. [クイックスタートガイド](docs/getting-started.md) を読んでインフラを構築
-2. [ADR](adr/) を読んで設計決定を確認
-3. モジュールをカスタマイズして機能を追加
-4. CI/CD パイプラインを設定
-
-## ライセンス
-
-MIT
