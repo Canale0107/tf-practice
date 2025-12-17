@@ -37,10 +37,10 @@ resource "aws_lambda_function" "main" {
   timeout     = var.timeout
   memory_size = var.memory_size
 
-  # デッドレターキュー
-  dead_letter_config {
-    target_arn = var.dead_letter_queue_arn != null ? var.dead_letter_queue_arn : null
-  }
+  # デッドレターキュー（dev用途なので無効化）
+  # dead_letter_config {
+  #   target_arn = var.dead_letter_queue_arn != null ? var.dead_letter_queue_arn : null
+  # }
 
   tags = var.tags
 }

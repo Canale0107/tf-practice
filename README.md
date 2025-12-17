@@ -52,6 +52,17 @@ tf-practice/
 - AWS CLI が設定済み
 - AWS アカウントへのアクセス権限
 
+### デプロイ手順
+
+**初めてデプロイする場合は、まず [デプロイガイド](docs/deployment-guide.md) を読んでください。**
+
+デプロイガイドには以下が含まれています：
+
+- AWS アカウントとの紐づけ方法
+- AWS 認証情報の設定方法
+- デプロイ手順の詳細
+- **AWS 料金についての説明**
+
 ### 初期セットアップ
 
 ```bash
@@ -73,6 +84,7 @@ terraform apply
 ## 設計書
 
 - テキストベースの設計書: `docs/`
+  - [**デプロイガイド**](docs/deployment-guide.md) - AWS アカウントへのデプロイ手順と料金情報
   - [アーキテクチャ設計書](docs/architecture.md)
   - [クイックスタートガイド](docs/getting-started.md)
   - [ADR ガイド](docs/adr-guide.md)
