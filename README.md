@@ -1,5 +1,7 @@
 # AWS Infrastructure as Code - Terraform Practice Project
 
+[![Terraform CI](https://github.com/Canale0107/tf-practice/actions/workflows/terraform.yml/badge.svg)](https://github.com/Canale0107/tf-practice/actions/workflows/terraform.yml)
+
 このプロジェクトは、モダンな AWS インフラ開発を学習するための Terraform サンプルプロジェクトです。
 GitOps による CI/CD とアジャイルな IaC 開発を体験できるように設計されています。
 
@@ -86,13 +88,6 @@ terraform apply
 - `ci-cd/.github/workflows/terraform.yml` で `terraform fmt`・`validate`・`plan` までを自動化。
 - `terraform apply` や `terraform destroy` は**必ず各自コマンドラインで実行してください**。
 - main ブランチに push/PR された際に CI が実行されます。
-
-### CI ステータスバッジ
-
-![Terraform CI](https://github.com/canale/tf-practice/actions/workflows/ci-cd/.github/workflows/terraform.yml/badge.svg)
-
-- このバッジは直近の CI 状態（成功/失敗）を示します。
-- 他のバッジも Actions タブから「Create status badge」ボタンで取得できます。
 
 ---
 
