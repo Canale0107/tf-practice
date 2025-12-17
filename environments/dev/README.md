@@ -1,22 +1,48 @@
-# environments/dev/ の超最小構成例（2025/12/17リセット）
+# environments/dev/ の超最小構成例（2025/12/17 リセット）
 
-このディレクトリは現在、「VPCしか作らない」最小Terraform構成です。
+このディレクトリは現在、「VPC しか作らない」最小 Terraform 構成です。
 
 ## ファイル一覧
-- main.tf ... VPCリソース定義
-- variables.tf ... AWSリージョン変数（デフォルト: ap-northeast-1）
-- outputs.tf ... VPCのID出力
+
+- main.tf ... VPC リソース定義
+- variables.tf ... AWS リージョン変数（デフォルト: ap-northeast-1）
+- outputs.tf ... VPC の ID 出力
 
 ## デプロイ手順
+
 ```sh
 cd environments/dev
 terraform init
 terraform apply
 ```
-（AWS認証情報が設定済みであること）
+
+（AWS 認証情報が設定済みであること）
 
 ---
 
-今後はここに1つずつリソースを追加・発展させていきます。
+## リソースのタグ規則
+
+本プロジェクトの AWS リソースには、以下のタグを一貫して設定します：
+
+- `Name`: `<環境名>-<プロジェクト名>-<リソース種別>`
+  - 例: `dev-tfpractice-vpc`
+- `system`: プロジェクト名（例: `tfpractice`）
+- `env`: 環境名（例: `dev`）
+
+> 将来的に他リソース（サブネット、IGW、S3、Lambda など）でも同じタグ設計と命名規則を採用してください。
+
+今後はここに 1 つずつリソースを追加・発展させていきます。
 最終的には docs/goal_structure_20251217.md を目指します。
 
+---
+
+## 作成した VPC の削除方法
+
+Terraform で作成したリソースは、同じディレクトリで次のコマンドで削除できます。
+
+```sh
+terraform destroy
+```
+
+- 削除されるリソースの一覧と確認が求められ、"yes" で本当に削除が実行されます。
+- 配下にサブリソースがある場合は依存関係に注意してください。
