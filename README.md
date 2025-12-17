@@ -77,6 +77,25 @@ terraform plan
 terraform apply
 ```
 
+---
+
+## CI/CD & バッジ表示
+
+本プロジェクトは GitHub Actions による CI/CD（plan, validate 等まで自動実行、apply/destroy は手作業のみ）を採用しています。
+
+- `ci-cd/.github/workflows/terraform.yml` で `terraform fmt`・`validate`・`plan` までを自動化。
+- `terraform apply` や `terraform destroy` は**必ず各自コマンドラインで実行してください**。
+- main ブランチに push/PR された際に CI が実行されます。
+
+### CI ステータスバッジ
+
+![Terraform CI](https://github.com/canale/tf-practice/actions/workflows/ci-cd/.github/workflows/terraform.yml/badge.svg)
+
+- このバッジは直近の CI 状態（成功/失敗）を示します。
+- 他のバッジも Actions タブから「Create status badge」ボタンで取得できます。
+
+---
+
 ## ADR（Architecture Decision Records）
 
 重要な設計決定は `adr/` ディレクトリに記録されます。
@@ -85,19 +104,29 @@ terraform apply
 
 - テキストベースの設計書: `docs/`
   - [**デプロイガイド**](docs/deployment-guide.md) - AWS アカウントへのデプロイ手順と料金情報
-  - [アーキテクチャ設計書](docs/architecture.md)
   - [クイックスタートガイド](docs/getting-started.md)
   - [ADR ガイド](docs/adr-guide.md)
   - [CI/CD ガイド](docs/cicd-guide.md)
 - Draw.io ダイアグラム: `diagrams/`
-  - Draw.io でアーキテクチャ図を作成する際の手順は [diagrams/README.md](diagrams/README.md) を参照
 
 ## Draw.io での図作成
 
 1. [draw.io](https://app.diagrams.net/) または Draw.io Desktop を開く
 2. AWS アイコンライブラリを有効化（More Shapes > AWS19）
-3. `docs/architecture.md` の構成図を参考に図を作成
+3. `docs/goal_structure_20251217.md` の構成や ADR を参考に図を作成
 4. `.drawio` 形式で `diagrams/` に保存
+
+---
+
+## 作成した VPC などの AWS リソースを削除するには？
+
+Terraform 管理下の VPC 等リソースは、対象ディレクトリで下記コマンド実行で安全に削除できます。
+
+```sh
+terraform destroy
+```
+
+- 削除リストを確認後 "yes"と入力で実行できます。
 
 ## 次のステップ
 

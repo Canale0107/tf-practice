@@ -6,16 +6,16 @@ on:
       - main
       - develop
     paths:
-      - 'environments/**'
-      - 'modules/**'
-      - '.github/workflows/**'
+      - "environments/**"
+      - "modules/**"
+      - ".github/workflows/**"
   pull_request:
     branches:
       - main
       - develop
     paths:
-      - 'environments/**'
-      - 'modules/**'
+      - "environments/**"
+      - "modules/**"
 
 env:
   AWS_REGION: ap-northeast-1
@@ -116,36 +116,3 @@ jobs:
               repo: context.repo.repo,
               body: output
             })
-
-  terraform-apply:
-    name: Terraform Apply
-    runs-on: ubuntu-latest
-    needs: [terraform-plan]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    strategy:
-      matrix:
-        environment: [dev]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Terraform Init
-        working-directory: environments/${{ matrix.environment }}
-        run: terraform init
-
-      - name: Terraform Apply
-        working-directory: environments/${{ matrix.environment }}
-        run: terraform apply -auto-approve
-
