@@ -9,7 +9,7 @@ on:
   workflow_dispatch: # 手動実行対応を追加
 
 env:
-  BUCKET_NAME: tfpractice-dev-static-web-3bbf3851
+  BUCKET_NAME: note-app.kanare.dev
 
 jobs:
   deploy:

@@ -17,7 +17,7 @@ resource "random_id" "suffix" {
 
 module "s3_static_web" {
   source                          = "../../modules/s3"
-  bucket_name                     = "tfpractice-dev-static-web-${random_id.suffix.hex}"
+  bucket_name                     = "note-app.kanare.dev"
   enable_static_hosting           = true
   block_public_acls               = false
   block_public_policy             = false
