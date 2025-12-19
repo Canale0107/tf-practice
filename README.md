@@ -118,8 +118,8 @@ terraform apply
 ## CI/CD について
 
 - GitHub Actions を利用した自動 plan/validate
-    - **pull_request（PR）時のみplan結果がPRコメントとして通知され、push（main/develop等）ではplan結果がActionsコンソールにのみ出力されます**
-    - apply/destroyは手作業で実施します
+  - **pull_request（PR）時のみ plan 結果が PR コメントとして通知され、push（main/develop 等）では plan 結果が Actions コンソールにのみ出力されます**
+  - apply/destroy は手作業で実施します
 - `.github/workflows/terraform.yml`, `.github/workflows/deploy-static-site.yml` にて管理
 
 ## 設計ドキュメント・背景
