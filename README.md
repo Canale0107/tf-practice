@@ -76,18 +76,23 @@
 
 ---
 
-## ディレクトリ構成
+## ディレクトリ構成（最新版：2025 年 12 月リファクタ）
 
 ```
 tf-practice/
-├── README.md
-├── environments/           # dev, prod, staging別Tf構成
-├── modules/                # サービス毎モジュール群
+├── frontend/                # 静的Webサイト (index.html, JS, CSS, SPAソース)
+│   ├── public/              # HTML, 画像など公開用
+│   ├── src/                 # (必要に応じて) SPAやアプリソース
+│   └── build/               # (自動生成) デプロイ成果物
+├── terraform/               # IaC/インフラ全般
+│   ├── environments/        # dev, prod, staging別Tf構成
+│   ├── modules/             # サービス毎モジュール群
+│   └── lambda-functions/    # Lambda用Python等
 ├── docs/                   # 運用/設計/提案ドキュメント
 ├── adr/                    # 重要設計意思決定(ADR)
 ├── diagrams/               # 設計図・SVG・note等
-├── lambda-functions/       # Lambda用コード
-└── ci-cd/                  # CI/CD構成例
+├── ci-cd/                  # CI/CD用ファイル
+└── README.md
 ```
 
 ---
@@ -101,7 +106,7 @@ tf-practice/
 ### セットアップ最短例
 
 ```bash
-cd environments/dev
+cd terraform/environments/dev
 cp terraform.tfvars.example terraform.tfvars
 terraform init
 terraform plan
