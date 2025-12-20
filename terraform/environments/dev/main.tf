@@ -138,7 +138,7 @@ resource "aws_acm_certificate" "api_custom" {
 
 # API Gatewayカスタムドメイン
 resource "aws_api_gateway_domain_name" "api_custom" {
-  domain_name = "api.note-app.kanare.dev"
+  domain_name     = "api.note-app.kanare.dev"
   certificate_arn = aws_acm_certificate.api_custom.arn
   endpoint_configuration {
     types = ["EDGE"]
@@ -148,12 +148,12 @@ resource "aws_api_gateway_domain_name" "api_custom" {
 # API Gateway パスマッピング（ルートに割り当て例）
 resource "aws_api_gateway_base_path_mapping" "api_mapping" {
   domain_name = aws_api_gateway_domain_name.api_custom.domain_name
-  api_id = module.api_gateway.api_id
+  api_id      = module.api_gateway.api_id
   stage_name  = "dev"
 }
 
 output "api_custom_domain_target" {
-  value = aws_api_gateway_domain_name.api_custom.cloudfront_domain_name
+  value       = aws_api_gateway_domain_name.api_custom.cloudfront_domain_name
   description = "API Gatewayカスタムドメイン向けCNAME先"
 }
 
