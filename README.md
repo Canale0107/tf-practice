@@ -18,11 +18,11 @@
 
 ### 🎯 このプロジェクトの特徴
 
-- ✅ **完全なIaC化**: AWS + Cloudflare DNSまでTerraformで管理
+- ✅ **完全な IaC 化**: AWS + Cloudflare DNS まで Terraform で管理
 - ✅ **再現性**: `terraform destroy` → `terraform apply` で完全復元
-- ✅ **本番環境レベル**: CloudFront + ACM証明書 + カスタムドメイン
-- ✅ **セキュリティ**: レート制限、DDoS対策、HTTPS強制
-- ✅ **モジュール設計**: 再利用可能なTerraformモジュール
+- ✅ **本番環境レベル**: CloudFront + ACM 証明書 + カスタムドメイン
+- ✅ **セキュリティ**: レート制限、DDoS 対策、HTTPS 強制
+- ✅ **モジュール設計**: 再利用可能な Terraform モジュール
 - ✅ **ドキュメント充実**: ADR、運用ガイド、トラブルシューティング
 
 ---
@@ -80,21 +80,21 @@
 ### AWS
 
 - **S3**: 静的 Web ホスティング
-- **CloudFront**: CDN、HTTPS配信（ACM証明書）
+- **CloudFront**: CDN、HTTPS 配信（ACM 証明書）
 - **API Gateway**: REST API（カスタムドメイン、レート制限）
 - **Lambda**: API バックエンド（Python）
 - **DynamoDB**: NoSQL DB（NoteTable）
-- **ACM**: SSL/TLS証明書管理
+- **ACM**: SSL/TLS 証明書管理
 - **Cognito**: ユーザー認証（予定）
 - **CodeBuild/CodePipeline**: CI/CD（予定）
 
-### Cloudflare（DNS管理）
+### Cloudflare（DNS 管理）
 
 - **DNS**: ドメイン・サブドメイン管理
-- **Terraform Provider**: DNSレコードの自動管理（オプション）
-  - ACM証明書検証用CNAMEレコード
-  - CloudFront/API Gateway向けCNAMEレコード
-  - 詳細: [Cloudflare Terraform導入ガイド](docs/cloudflare-terraform-guide.md)
+- **Terraform Provider**: DNS レコードの自動管理（オプション）
+  - ACM 証明書検証用 CNAME レコード
+  - CloudFront/API Gateway 向け CNAME レコード
+  - 詳細: [Cloudflare Terraform 導入ガイド](docs/cloudflare-terraform-guide.md)
 
 ---
 
@@ -124,9 +124,9 @@ tf-practice/
 - [docs/getting-started.md](docs/getting-started.md): 初期セットアップ
 - [docs/deployment-guide.md](docs/deployment-guide.md): 詳細デプロイ&コスト注意
 - [docs/cicd-guide.md](docs/cicd-guide.md): CI/CD 運用ガイド
-- [docs/github-actions-setup.md](docs/github-actions-setup.md): GitHub Actions設定ガイド
-- [docs/rebuild-guide.md](docs/rebuild-guide.md): インフラ再構築ガイド（destroy→apply時）
-- [docs/cloudflare-terraform-guide.md](docs/cloudflare-terraform-guide.md): Cloudflare DNS自動管理の導入
+- [docs/github-actions-setup.md](docs/github-actions-setup.md): GitHub Actions 設定ガイド
+- [docs/rebuild-guide.md](docs/rebuild-guide.md): インフラ再構築ガイド（destroy→apply 時）
+- [docs/cloudflare-terraform-guide.md](docs/cloudflare-terraform-guide.md): Cloudflare DNS 自動管理の導入
 
 ### セットアップ最短例
 
@@ -139,9 +139,9 @@ terraform plan
 terraform apply
 ```
 
-#### Cloudflare DNS自動管理（オプション）
+#### Cloudflare DNS 自動管理
 
-デフォルトでは手動でCloudflare DNSを設定する必要がありますが、Terraform Providerを使用して完全自動化できます：
+Cloudflare DNS の設定も、Terraform Provider を使用して完全自動化しています：
 
 ```bash
 # terraform.tfvars に以下を追加
@@ -150,7 +150,7 @@ cloudflare_api_token  = "your-api-token"
 cloudflare_zone_id    = "your-zone-id"
 ```
 
-詳細: [Cloudflare Terraform導入ガイド](docs/cloudflare-terraform-guide.md)
+詳細: [Cloudflare Terraform 導入ガイド](docs/cloudflare-terraform-guide.md)
 
 ---
 
