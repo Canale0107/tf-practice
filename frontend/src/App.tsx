@@ -60,13 +60,16 @@ export default function App() {
   });
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
+    // ISO 8601形式の文字列に'Z'が付いていない場合は追加
+    const dateStr = dateString.endsWith("Z") ? dateString : dateString + "Z";
+    const date = new Date(dateStr);
+    return date.toLocaleString("ja-JP", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "Asia/Tokyo",
     });
   };
 
@@ -82,8 +85,8 @@ export default function App() {
         </header>
 
         {/* Create Note Form */}
-        <div className="card-light rounded-xl p-5 mb-6 animate-fade-in">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <div className="mb-6 animate-fade-in">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <svg
               className="w-5 h-5 text-gray-700"
               fill="none"
@@ -111,7 +114,7 @@ export default function App() {
             <div>
               <input
                 type="text"
-                className="input-modern w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400 text-sm transition-all"
+                className="input-modern w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400 text-sm transition-all bg-white"
                 placeholder="タイトルを入力..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -120,7 +123,7 @@ export default function App() {
             </div>
             <div>
               <textarea
-                className="input-modern w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400 resize-none h-24 text-sm transition-all"
+                className="input-modern w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-400 resize-none h-24 text-sm transition-all bg-white"
                 placeholder="内容を入力..."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -248,23 +251,53 @@ export default function App() {
             </div>
           ) : (
             <div className="space-y-3">
-              {data?.notes.map((note, index) => (
-                <div
-                  key={note.noteId}
-                  className="note-card note-item card-light rounded-lg p-4"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-gray-900 mb-1.5 break-words">
-                        {note.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 leading-relaxed mb-2 break-words">
-                        {note.content}
-                      </p>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              {data?.notes
+                .sort((a, b) => {
+                  // 新しい順（降順）にソート
+                  return (
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                  );
+                })
+                .map((note, index) => (
+                  <div
+                    key={note.noteId}
+                    className="note-card note-item card-light rounded-lg p-4"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-semibold text-gray-900 mb-1.5 break-words">
+                          {note.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 leading-relaxed mb-2 break-words">
+                          {note.content}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span>{formatDate(note.createdAt)}</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => deleteMutation.mutate(note.noteId)}
+                        disabled={deleteMutation.isPending}
+                        className="btn-delete px-3 py-1.5 rounded-md text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-all"
+                        title="削除"
+                      >
                         <svg
-                          className="w-3.5 h-3.5"
+                          className="w-4 h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -273,35 +306,13 @@ export default function App() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                           />
                         </svg>
-                        <span>{formatDate(note.createdAt)}</span>
-                      </div>
+                      </button>
                     </div>
-                    <button
-                      onClick={() => deleteMutation.mutate(note.noteId)}
-                      disabled={deleteMutation.isPending}
-                      className="btn-delete px-3 py-1.5 rounded-md text-white text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-all"
-                      title="削除"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </div>
