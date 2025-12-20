@@ -40,6 +40,42 @@
 
 ---
 
+## 次にやるべきこと（現状進捗・ステータス管理）
+
+現状（2025/12/20 時点）：
+
+- S3（静的ホスティング）＋ CloudFront ＋ ACM（HTTPS 配信）は構築済み
+- ドキュメントやコードベースと状態は整合がとれています
+
+今後の推奨進行順：
+
+**1. API Gateway + Lambda サーバレス API 追加**
+
+- Terraform の modules/api-gateway, modules/lambda を使い
+- Lambda 関数（例: lambda-functions/api-handler.py）をノート CRUD（／notes エンドポイント）用に実装
+- API Gateway/Lambda 公開。apply 後 outputs で URL 確認
+
+**2. DynamoDB テーブル新設・Lambda 統合**
+
+- modules/dynamodb でテーブルを定義、Lambda 側の IAM 権限を調整
+- Lambda から DynamoDB への CRUD 実装／テスト
+
+**3. 認証（Cognito User Pool）**
+
+- modules/cognito を使い Cognito ユーザープール作成
+- API Gateway へ Cognito 認可設定、Lambda/API と連携
+
+**4. フロントから API 連携・認証 UI**
+
+- frontend/public/ もしくは src/ から API Gateway エンドポイントへのアクセス実装
+- 認証トークン管理・セッション制御含む
+
+**5. CI/CD・タグ・Secrets 管理・本番対応など運用強化**
+
+このステップで進めていくことを推奨します。
+
+---
+
 ## 実践 Tips
 
 - 1 ステップ進めたごとに AWS 管理コンソールで挙動を直接確認・失敗したら原因究明
