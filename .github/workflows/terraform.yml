@@ -101,7 +101,6 @@ jobs:
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: terraform plan -out=tfplan
-        continue-on-error: true
 
       - name: Comment PR
         uses: actions/github-script@v6

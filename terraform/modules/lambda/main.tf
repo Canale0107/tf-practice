@@ -72,11 +72,14 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 }
 
 # 追加のIAMポリシー（DynamoDB、S3などへのアクセス）
+# countを使わず常に作成するが、ポリシーが空の場合は何もしないダミーポリシーを設定
 resource "aws_iam_role_policy" "lambda_additional_policy" {
-  count  = var.additional_policy_json != "" ? 1 : 0
-  name   = "${var.function_name}-additional-policy"
-  role   = aws_iam_role.lambda_role.id
-  policy = var.additional_policy_json
+  name = "${var.function_name}-additional-policy"
+  role = aws_iam_role.lambda_role.id
+  policy = var.additional_policy_json != "" ? var.additional_policy_json : jsonencode({
+    Version = "2012-10-17"
+    Statement = []
+  })
 }
 
 # CloudWatch Logs
