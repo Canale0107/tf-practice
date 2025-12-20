@@ -94,7 +94,8 @@
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .glass, .glass-light {
+  .glass,
+  .glass-light {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
