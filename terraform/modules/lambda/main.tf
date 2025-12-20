@@ -77,7 +77,7 @@ resource "aws_iam_role_policy" "lambda_additional_policy" {
   name = "${var.function_name}-additional-policy"
   role = aws_iam_role.lambda_role.id
   policy = var.additional_policy_json != "" ? var.additional_policy_json : jsonencode({
-    Version = "2012-10-17"
+    Version   = "2012-10-17"
     Statement = []
   })
 }
@@ -89,4 +89,3 @@ resource "aws_cloudwatch_log_group" "lambda_logs" {
 
   tags = var.tags
 }
-
