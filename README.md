@@ -124,6 +124,7 @@ tf-practice/
 - [docs/getting-started.md](docs/getting-started.md): 初期セットアップ
 - [docs/deployment-guide.md](docs/deployment-guide.md): 詳細デプロイ&コスト注意
 - [docs/cicd-guide.md](docs/cicd-guide.md): CI/CD 運用ガイド
+- [docs/github-actions-setup.md](docs/github-actions-setup.md): GitHub Actions設定ガイド
 - [docs/rebuild-guide.md](docs/rebuild-guide.md): インフラ再構築ガイド（destroy→apply時）
 - [docs/cloudflare-terraform-guide.md](docs/cloudflare-terraform-guide.md): Cloudflare DNS自動管理の導入
 

@@ -58,6 +58,11 @@ jobs:
 
       - name: Terraform Validate
         working-directory: terraform/environments/${{ matrix.environment }}
+        env:
+          # Cloudflare設定（オプション）
+          TF_VAR_enable_cloudflare_dns: "false"
+          TF_VAR_cloudflare_api_token: "dummy"
+          TF_VAR_cloudflare_zone_id: "dummy"
         run: terraform validate
 
   terraform-plan:
@@ -90,6 +95,11 @@ jobs:
 
       - name: Terraform Plan
         working-directory: terraform/environments/${{ matrix.environment }}
+        env:
+          # Cloudflare設定（オプション：DNS自動管理を有効にする場合）
+          TF_VAR_enable_cloudflare_dns: ${{ secrets.ENABLE_CLOUDFLARE_DNS || 'false' }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: terraform plan -out=tfplan
         continue-on-error: true
 
