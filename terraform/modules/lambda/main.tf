@@ -73,7 +73,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
 
 # 追加のIAMポリシー（DynamoDB、S3などへのアクセス）
 resource "aws_iam_role_policy" "lambda_additional_policy" {
-  count  = var.additional_policy_json != null ? 1 : 0
+  count  = var.additional_policy_json != "" ? 1 : 0
   name   = "${var.function_name}-additional-policy"
   role   = aws_iam_role.lambda_role.id
   policy = var.additional_policy_json

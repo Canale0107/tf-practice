@@ -46,7 +46,7 @@ variable "dead_letter_queue_arn" {
 variable "additional_policy_json" {
   description = "追加のIAMポリシー（JSON形式）"
   type        = string
-  default     = null
+  default     = ""
 }
 
 variable "log_retention_days" {
