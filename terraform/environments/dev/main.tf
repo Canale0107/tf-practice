@@ -54,11 +54,11 @@ resource "aws_acm_certificate_validation" "note_app_cert_validation" {
 }
 
 resource "aws_cloudfront_distribution" "note_app" {
-  depends_on = [aws_acm_certificate_validation.note_app_cert_validation]
-  enabled             = true
-  is_ipv6_enabled     = true
-  comment             = "note-app.kanare.dev static site"
-  aliases             = ["note-app.kanare.dev"]
+  depends_on      = [aws_acm_certificate_validation.note_app_cert_validation]
+  enabled         = true
+  is_ipv6_enabled = true
+  comment         = "note-app.kanare.dev static site"
+  aliases         = ["note-app.kanare.dev"]
 
   origin {
     domain_name = module.s3_static_web.website_endpoint
@@ -66,7 +66,7 @@ resource "aws_cloudfront_distribution" "note_app" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only"        # S3 WebsiteEndpoint 必須
+      origin_protocol_policy = "http-only" # S3 WebsiteEndpoint 必須
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
@@ -92,9 +92,9 @@ resource "aws_cloudfront_distribution" "note_app" {
     }
   }
   viewer_certificate {
-    acm_certificate_arn            = aws_acm_certificate.note_app_cert.arn
-    ssl_support_method             = "sni-only"
-    minimum_protocol_version       = "TLSv1.2_2019"
+    acm_certificate_arn      = aws_acm_certificate.note_app_cert.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2019"
   }
   tags = {
     Name   = "dev-tfpractice-cloudfront"

@@ -10,7 +10,7 @@ output "s3_website_endpoint" {
 
 output "acm_dns_validation_options" {
   description = "ACM証明書バリデーション用DNS情報 (CNAME)"
-  value = aws_acm_certificate.note_app_cert.domain_validation_options
+  value       = aws_acm_certificate.note_app_cert.domain_validation_options
 }
 
 output "cloudfront_domain_name" {
