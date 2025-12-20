@@ -41,7 +41,7 @@ def handler(event, context):
         body = json.loads(event.get('body', '{}'))
         import uuid
         note_id = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = datetime.utcnow().isoformat() + 'Z'  # UTCであることを明示
         item = {
             "userId": user_id,
             "noteId": note_id,
@@ -67,7 +67,7 @@ def handler(event, context):
     elif method == "PUT" and path.startswith("/notes/"):
         note_id = path.split("/notes/")[-1]
         body = json.loads(event.get('body', '{}'))
-        now = datetime.utcnow().isoformat()
+        now = datetime.utcnow().isoformat() + 'Z'  # UTCであることを明示
         result = table.update_item(
             Key={"userId": user_id, "noteId": note_id},
             UpdateExpression="SET #t = :title, #c = :content, #u = :u",
@@ -141,7 +141,7 @@ def create_user(event, headers):
             'userId': user_id,
             'email': body.get('email', ''),
             'name': body.get('name', ''),
-            'createdAt': datetime.utcnow().isoformat()
+            'createdAt': datetime.utcnow().isoformat() + 'Z'  # UTCであることを明示
         }
         
         table.put_item(Item=item)
