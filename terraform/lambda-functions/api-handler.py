@@ -8,63 +8,32 @@ dynamodb = boto3.resource('dynamodb')
 table_name = os.environ.get('DYNAMODB_TABLE')
 table = dynamodb.Table(table_name) if table_name else None
 
-def handler(event, context):
-    """
-    API Gateway Lambda統合用のハンドラー
-    """
-    http_method = event.get('httpMethod', 'GET')
-    path = event.get('path', '/')
-    
-    # CORSヘッダー
-    headers = {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+def response(status_code, body):
+    return {
+        "statusCode": status_code,
+        "headers": {"Content-Type": "application/json"},
+        "body": json.dumps(body)
     }
-    
-    # OPTIONSリクエスト（CORSプリフライト）
-    if http_method == 'OPTIONS':
-        return {
-            'statusCode': 200,
-            'headers': headers,
-            'body': ''
-        }
-    
-    try:
-        # ルートパス
-        if path == '/' or path == '':
-            return {
-                'statusCode': 200,
-                'headers': headers,
-                'body': json.dumps({
-                    'message': 'Welcome to MVP API',
-                    'timestamp': datetime.utcnow().isoformat(),
-                    'version': '1.0.0'
-                })
-            }
-        
-        # /users エンドポイント
-        if path.startswith('/users'):
-            if http_method == 'GET':
-                return get_users(event, headers)
-            elif http_method == 'POST':
-                return create_user(event, headers)
-        
-        # 404 Not Found
-        return {
-            'statusCode': 404,
-            'headers': headers,
-            'body': json.dumps({'error': 'Not Found'})
-        }
-        
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return {
-            'statusCode': 500,
-            'headers': headers,
-            'body': json.dumps({'error': 'Internal Server Error', 'message': str(e)})
-        }
+
+def handler(event, context):
+    method = event.get("httpMethod")
+    path = event.get("path", "")
+
+    if method == "GET" and path == "/notes":
+        return response(200, {"message": "ノート一覧取得 (仮)"})
+    elif method == "POST" and path == "/notes":
+        return response(201, {"message": "ノート新規作成 (仮)"})
+    elif method == "GET" and path.startswith("/notes/"):
+        note_id = path.split("/notes/")[-1]
+        return response(200, {"message": f"ノート取得（仮）: {note_id}"})
+    elif method == "PUT" and path.startswith("/notes/"):
+        note_id = path.split("/notes/")[-1]
+        return response(200, {"message": f"ノート更新（仮）: {note_id}"})
+    elif method == "DELETE" and path.startswith("/notes/"):
+        note_id = path.split("/notes/")[-1]
+        return response(200, {"message": f"ノート削除（仮）: {note_id}"})
+    else:
+        return response(404, {"error": "Not Found"})
 
 def get_users(event, headers):
     """ユーザー一覧を取得"""
