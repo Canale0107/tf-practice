@@ -320,10 +320,15 @@ export default function App() {
         {/* Footer */}
         <footer className="text-center mt-10 py-6 border-t border-gray-200 animate-fade-in">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1.5">
+            <a
+              href="https://kanare.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 hover:text-gray-900 transition-colors"
+            >
               <span>©</span>
               <span>Kanare Kodera</span>
-            </div>
+            </a>
             <div className="hidden sm:block text-gray-300">|</div>
             <a
               href="https://github.com/Canale0107/tf-practice"
