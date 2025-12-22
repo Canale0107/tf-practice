@@ -64,8 +64,9 @@ module "api_gateway" {
   lambda_function_name = module.lambda.function_name
   
   # Cognito認証
-  authorization_type = "COGNITO_USER_POOLS"
-  authorizer_id      = module.cognito.authorizer_id
+  authorization_type        = "COGNITO_USER_POOLS"
+  enable_cognito_authorizer = true
+  cognito_user_pool_arn     = module.cognito.user_pool_arn
   
   # レート制限
   enable_throttling = true
@@ -201,6 +202,8 @@ module "api_gateway" {
 | lambda_invoke_arn | Lambda関数の呼び出しARN | `string` | n/a | yes |
 | lambda_function_name | Lambda関数名 | `string` | n/a | yes |
 | authorization_type | 認証タイプ（NONE, COGNITO_USER_POOLS） | `string` | `"NONE"` | no |
+| enable_cognito_authorizer | Cognito Authorizerを作成するか | `bool` | `false` | no |
+| cognito_user_pool_arn | Cognito User Pool ARN | `string` | `null` | no |
 | enable_throttling | レート制限を有効化 | `bool` | `false` | no |
 | throttle_burst_limit | バースト時の最大リクエスト数 | `number` | `100` | no |
 | throttle_rate_limit | 1秒あたりの平均リクエスト数 | `number` | `50` | no |

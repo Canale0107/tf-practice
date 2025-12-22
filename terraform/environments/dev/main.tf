@@ -150,8 +150,9 @@ module "api_gateway" {
   lambda_function_name = module.lambda_api_handler.function_name
 
   # Cognito認証設定
-  authorization_type    = "COGNITO_USER_POOLS"
-  cognito_user_pool_arn = module.cognito.user_pool_arn
+  authorization_type        = "COGNITO_USER_POOLS"
+  enable_cognito_authorizer = true
+  cognito_user_pool_arn     = module.cognito.user_pool_arn
 
   # レート制限設定を有効化
   enable_throttling    = true
