@@ -10,3 +10,4 @@ aws_region = "ap-northeast-1"
 # デフォルトでは手動でCloudflare DNSを設定する必要があります
 enable_cloudflare_dns = false
 
+

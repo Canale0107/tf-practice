@@ -226,3 +226,4 @@ module "api_gateway" {
 - [API Gateway Usage Plans](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html)
 - [API Gateway 料金](https://aws.amazon.com/jp/api-gateway/pricing/)
 
+
