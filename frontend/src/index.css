@@ -2,6 +2,24 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Geist Sans Font */
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Geist Mono Font */
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* Updated to a clean, modern light theme inspired by Vercel design */
   --background: oklch(1 0 0);

@@ -300,4 +300,3 @@ export function NotesList({
     </div>
   );
 }
-

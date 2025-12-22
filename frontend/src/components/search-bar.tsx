@@ -71,4 +71,3 @@ export function SearchBar({
     </div>
   );
 }
-

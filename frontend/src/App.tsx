@@ -5,6 +5,7 @@ import { NoteForm, type Note } from "@/components/note-form";
 import { SearchBar } from "@/components/search-bar";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
+import { FaRegCopyright } from "react-icons/fa";
 
 const endpoint = "https://api.note-app.kanare.dev/notes";
 
@@ -194,7 +195,7 @@ export default function App() {
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 transition-colors hover:text-foreground"
             >
-              <span>©</span>
+              <FaRegCopyright />
               <span>Kanare Kodera</span>
             </a>
             <div className="hidden text-border sm:block">|</div>
