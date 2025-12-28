@@ -326,3 +326,11 @@ aws s3 sync frontend/dist/ s3://note-app.kanare.dev/ --delete
 **バージョン**: 1.0
 
 
+
+
+
+
+
+
+
+
