@@ -1,18 +1,26 @@
+# React SPAをビルドしてS3にデプロイし、CloudFrontのキャッシュを更新
+# - dev環境: PR作成時または手動実行
+# - prod環境: mainブランチへのpushまたは手動実行
 name: Deploy Static Site to S3
 
+# トリガー条件
 on:
+  # mainブランチへのpush時（prod環境にデプロイ）
   push:
     branches:
       - main
     paths:
+      # frontend関連ファイルの変更時のみ実行
       - "frontend/**"
       - ".github/workflows/deploy-static-site.yml"
+  # PR作成時（dev環境にデプロイしてプレビュー）
   pull_request:
     branches:
       - main
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-static-site.yml"
+  # 手動実行（環境を選択可能）
   workflow_dispatch:
     inputs:
       environment:
@@ -27,11 +35,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write
+      contents: read           # コードの読み取り権限
+      pull-requests: write     # PRにデプロイ結果をコメントする権限
     steps:
       - uses: actions/checkout@v3
 
+      # デプロイ先の環境を決定するロジック
+      # - workflow_dispatch（手動実行）: ユーザーが選択した環境
+      # - pull_request: dev環境（プレビュー用）
+      # - push to main: prod環境（本番リリース）
       - name: Determine environment
         id: set-env
         run: |
@@ -45,6 +57,8 @@ jobs:
             echo "environment=dev" >> $GITHUB_OUTPUT
           fi
 
+      # 環境ごとのS3バケット名、ドメイン、APIエンドポイントを設定
+      # これらの値はフロントエンドのビルド時に環境変数として使用される
       - name: Set environment variables
         id: set-vars
         run: |
@@ -58,6 +72,7 @@ jobs:
             echo "api_base_url=https://api-dev.note-app.kanare.dev" >> $GITHUB_OUTPUT
           fi
 
+      # AWS認証情報を設定（S3へのアップロードとCloudFront操作に必要）
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -65,6 +80,8 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-1
 
+      # デプロイ先のS3バケットが存在するか確認
+      # バケットが存在しない場合はエラーで終了（先にTerraformでインフラを構築する必要がある）
       - name: Check if S3 bucket exists
         run: |
           if ! aws s3 ls "s3://${{ steps.set-vars.outputs.bucket_name }}" > /dev/null 2>&1; then
@@ -74,11 +91,15 @@ jobs:
           fi
           echo "✅ S3バケット ${{ steps.set-vars.outputs.bucket_name }} が見つかりました"
 
+      # TerraformのoutputsからCognito設定を取得するためにセットアップ
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.0
 
+      # TerraformのoutputsからCognito User Pool IDとClient IDを取得
+      # フロントエンドのビルドに必須の環境変数（Cognito認証に使用）
+      # フォールバック: Terraform失敗時はGitHub Secretsから取得
       - name: Get Cognito configuration from Terraform outputs
         id: get-cognito
         run: |
@@ -120,11 +141,15 @@ jobs:
             fi
           fi
 
+      # フロントエンドのnpm依存関係をインストール
+      # npm ci: package-lock.jsonから再現性の高いクリーンインストール
       - name: Install dependencies
         run: |
           cd frontend
           npm ci
 
+      # React SPAをビルド（production最適化）
+      # 環境変数にAPI URL、AWSリージョン、Cognito設定を注入
       - name: Build static site
         run: |
           cd frontend
@@ -135,11 +160,15 @@ jobs:
           VITE_USER_POOL_ID: ${{ steps.get-cognito.outputs.user_pool_id }}
           VITE_USER_POOL_CLIENT_ID: ${{ steps.get-cognito.outputs.user_pool_client_id }}
 
+      # ビルド成果物（frontend/dist/）をS3バケットに同期
+      # --delete: S3側の古いファイルを削除して完全同期
       - name: Sync static files to S3
         run: |
           aws s3 sync frontend/dist/ s3://${{ steps.set-vars.outputs.bucket_name }}/ --delete
           echo "✅ デプロイ完了: https://${{ steps.set-vars.outputs.domain_name }}"
 
+      # 環境に対応するCloudFront DistributionのIDを取得
+      # ドメイン名（Aliases）から該当するDistributionを検索
       - name: Get CloudFront distribution ID
         id: get-cloudfront
         run: |
@@ -155,6 +184,8 @@ jobs:
             echo "distribution_id=" >> $GITHUB_OUTPUT
           fi
 
+      # CloudFrontのキャッシュを無効化（最新コンテンツをすぐに配信）
+      # S3にアップロードしただけではCloudFrontは古いキャッシュを返すため必須
       - name: Invalidate CloudFront cache
         if: steps.get-cloudfront.outputs.distribution_id != ''
         run: |
@@ -163,6 +194,8 @@ jobs:
             --paths "/*"
           echo "✅ CloudFrontキャッシュを無効化しました"
 
+      # PR作成時にデプロイ結果をコメントで通知
+      # プレビューURLと環境詳細を表示してレビュアーが確認しやすくする
       - name: Comment on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v6

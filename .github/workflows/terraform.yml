@@ -1,11 +1,17 @@
+# Terraformコードの品質チェックとインフラ変更計画を自動実行するCI/CDパイプライン
+# - フォーマットチェック、検証、プラン実行を行う
+# - apply（実際のインフラ変更）は手動実行が必要
 name: Terraform CI
 
+# トリガー条件
 on:
+  # main/developブランチへのpush時、またはこれらのブランチへのPR作成時に実行
   push:
     branches:
       - main
       - develop
     paths:
+      # Terraform関連ファイルの変更時のみ実行
       - "terraform/environments/**"
       - "terraform/modules**"
       - ".github/workflows/**"
@@ -17,11 +23,17 @@ on:
       - "terraform/environments/**"
       - "terraform/modules**"
 
+# 環境変数（全ジョブで共有）
 env:
-  AWS_REGION: ap-northeast-1
-  TF_VERSION: 1.5.0
+  AWS_REGION: ap-northeast-1  # 東京リージョン
+  TF_VERSION: 1.5.0           # 使用するTerraformバージョン
 
 jobs:
+  # ========================================
+  # Job 1: Terraformコードのフォーマットチェック
+  # ========================================
+  # 目的: コードスタイルの統一性を確保
+  # 実行内容: `terraform fmt -check -recursive` でフォーマット違反を検出
   terraform-fmt:
     name: Terraform Format Check
     runs-on: ubuntu-latest
@@ -34,13 +46,22 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # 再帰的にすべてのTerraformファイルのフォーマットをチェック
+      # フォーマット違反があればエラーで終了（修正はしない）
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
+  # ========================================
+  # Job 2: Terraformコードの文法・設定検証
+  # ========================================
+  # 目的: Terraformコードの構文エラーや設定ミスを早期発見
+  # 実行内容: dev/prod両環境で terraform validate を実行
+  # 注意: バックエンドなしで初期化（-backend=false）し、ダミー変数で検証
   terraform-validate:
     name: Terraform Validate
     runs-on: ubuntu-latest
     strategy:
+      # dev と prod の両方の環境で並行実行
       matrix:
         environment: [dev, prod]
     steps:
@@ -52,10 +73,13 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # バックエンド（S3ステート）なしで初期化
+      # 検証だけならステート不要なので高速化のため無効化
       - name: Terraform Init
         working-directory: terraform/environments/${{ matrix.environment }}
         run: terraform init -backend=false
 
+      # 環境ごとのドメイン名を設定（検証用のダミー値）
       - name: Set environment variables for validation
         id: set-validate-vars
         run: |
@@ -67,30 +91,39 @@ jobs:
             echo "api_domain_name=api.note-app.kanare.dev" >> $GITHUB_OUTPUT
           fi
 
+      # Terraform設定の構文と整合性を検証
+      # 必須変数にはダミー値を設定してバリデーションを通す
       - name: Terraform Validate
         working-directory: terraform/environments/${{ matrix.environment }}
         env:
-          # 必須変数（ダミー値）
+          # 必須変数（検証用ダミー値）
           TF_VAR_env: ${{ matrix.environment }}
           TF_VAR_domain_name: ${{ steps.set-validate-vars.outputs.domain_name }}
           TF_VAR_api_domain_name: ${{ steps.set-validate-vars.outputs.api_domain_name }}
-          # Cloudflare設定（オプション）
+          # Cloudflare設定（オプション変数にダミー値）
           TF_VAR_enable_cloudflare_dns: "false"
           TF_VAR_cloudflare_api_token: "dummy"
           TF_VAR_cloudflare_zone_id: "dummy"
         run: terraform validate
 
+  # ========================================
+  # Job 3: Terraformプラン（インフラ変更の計画）
+  # ========================================
+  # 目的: 実際のAWSリソースと比較し、どのような変更が発生するかプレビュー
+  # 実行タイミング: PR作成時、またはmainブランチへのpush時
+  # 依存関係: フォーマットチェックと検証が成功した場合のみ実行
+  # 注意: planを実行するだけで、applyは手動で行う必要がある
   terraform-plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
-    needs: [terraform-fmt, terraform-validate]
+    needs: [terraform-fmt, terraform-validate]  # 前のジョブが成功した場合のみ実行
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     permissions:
-      contents: read
-      pull-requests: write
+      contents: read           # コードの読み取り権限
+      pull-requests: write     # PRにコメントを書き込む権限
     strategy:
       matrix:
-        environment: [dev, prod]
+        environment: [dev, prod]  # dev/prod両環境で並行実行
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -100,6 +133,7 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # AWS認証情報を設定（S3ステートへのアクセスとプラン実行に必要）
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -107,10 +141,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # S3バックエンドとプロバイダーを初期化
       - name: Terraform Init
         working-directory: terraform/environments/${{ matrix.environment }}
         run: terraform init
 
+      # 環境ごとのドメイン名を設定
       - name: Set environment variables
         id: set-env-vars
         run: |
@@ -122,16 +158,18 @@ jobs:
             echo "api_domain_name=api.note-app.kanare.dev" >> $GITHUB_OUTPUT
           fi
 
+      # インフラ変更計画を作成（実行はしない）
+      # plan_output.txtに結果を保存してPRコメントで共有
       - name: Terraform Plan
         id: plan
         working-directory: terraform/environments/${{ matrix.environment }}
-        continue-on-error: true
+        continue-on-error: true  # planが失敗してもPRコメントを表示できるように継続
         env:
-          # 必須変数
+          # 必須変数（実際の値を使用）
           TF_VAR_env: ${{ matrix.environment }}
           TF_VAR_domain_name: ${{ steps.set-env-vars.outputs.domain_name }}
           TF_VAR_api_domain_name: ${{ steps.set-env-vars.outputs.api_domain_name }}
-          # Cloudflare設定（オプション：DNS自動管理を有効にする場合）
+          # Cloudflare設定（オプション：DNS自動管理を有効にする場合のみ設定）
           TF_VAR_enable_cloudflare_dns: ${{ secrets.ENABLE_CLOUDFLARE_DNS || 'false' }}
           TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN || '' }}
           TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID || '' }}
@@ -139,6 +177,8 @@ jobs:
           terraform plan -no-color -out=tfplan 2>&1 | tee plan_output.txt
           echo "exitcode=$?" >> $GITHUB_OUTPUT
 
+      # PR作成時にプラン結果をコメントとして追加
+      # レビュアーがインフラ変更内容を確認できるようにする
       - name: Comment PR
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
@@ -147,6 +187,7 @@ jobs:
           script: |
             const fs = require('fs');
             const planOutput = fs.readFileSync('terraform/environments/${{ matrix.environment }}/plan_output.txt', 'utf8');
+            // GitHub PRコメントの文字数制限対策（65KB以下に制限）
             const truncatedPlan = planOutput.length > 65000 ? planOutput.substring(0, 65000) + '\n\n... (truncated)' : planOutput;
 
             const output = `#### Terraform Plan - \`${{ matrix.environment }}\` environment
