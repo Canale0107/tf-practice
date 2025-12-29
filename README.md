@@ -86,7 +86,7 @@
 - **DynamoDB**: NoSQL DB（NoteTable）
 - **ACM**: SSL/TLS 証明書管理
 - **Cognito**: ユーザー認証
-- **WAF**: DDoS対策（予定）
+- **WAF**: DDoS 対策（予定）
 
 ### Cloudflare（DNS 管理）
 
@@ -127,7 +127,7 @@ tf-practice/
 
 ### 📚 主要ドキュメント
 
-- [terraform/MIGRATION_GUIDE.md](terraform/MIGRATION_GUIDE.md): **Dev/Prod環境分離ガイド**（必読）
+- [terraform/MIGRATION_GUIDE.md](terraform/MIGRATION_GUIDE.md): **Dev/Prod 環境分離ガイド**（必読）
 - [docs/getting-started.md](docs/getting-started.md): 初期セットアップ
 - [docs/deployment-guide.md](docs/deployment-guide.md): 詳細デプロイ&コスト注意
 - [docs/cicd-guide.md](docs/cicd-guide.md): CI/CD 運用ガイド
@@ -137,18 +137,19 @@ tf-practice/
 
 ### 🏗️ 環境構成
 
-本プロジェクトは**Dev/Prod環境を完全分離**しています：
+本プロジェクトは**Dev/Prod 環境を完全分離**しています：
 
-| 環境 | ドメイン | State管理 | 用途 |
-|------|----------|-----------|------|
-| **Prod** | note-app.kanare.dev | `s3://…/prod/terraform.tfstate` | 本番環境（lifecycle保護あり） |
-| **Dev** | dev.note-app.kanare.dev | `s3://…/dev/terraform.tfstate` | 開発環境（自由に破壊可能） |
+| 環境     | ドメイン                | State 管理                      | 用途                           |
+| -------- | ----------------------- | ------------------------------- | ------------------------------ |
+| **Prod** | note-app.kanare.dev     | `s3://…/prod/terraform.tfstate` | 本番環境（lifecycle 保護あり） |
+| **Dev**  | dev.note-app.kanare.dev | `s3://…/dev/terraform.tfstate`  | 開発環境（自由に破壊可能）     |
 
 詳細: [terraform/MIGRATION_GUIDE.md](terraform/MIGRATION_GUIDE.md)
 
 ### セットアップ最短例
 
 #### Phase 1: Backend Setup（初回のみ）
+
 ```bash
 cd terraform/backend-setup
 terraform init
@@ -156,6 +157,7 @@ terraform apply
 ```
 
 #### Phase 2: 環境のデプロイ
+
 ```bash
 # Dev環境の場合
 cd terraform/environments/dev
