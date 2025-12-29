@@ -130,8 +130,7 @@ module "lambda_api_handler" {
           "dynamodb:GetItem",
           "dynamodb:UpdateItem",
           "dynamodb:DeleteItem",
-          "dynamodb:Query",
-          "dynamodb:Scan"
+          "dynamodb:Query"
         ]
         Resource = module.notes_table.table_arn
       }
