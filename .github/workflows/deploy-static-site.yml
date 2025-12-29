@@ -4,21 +4,59 @@ on:
   push:
     branches:
       - main
-      - master
-      - develop
     paths:
       - "frontend/**"
-      - ".github/workflows/**"
-  workflow_dispatch: # 手動実行対応を追加
-
-env:
-  BUCKET_NAME: note-app.kanare.dev
+      - ".github/workflows/deploy-static-site.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-static-site.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v3
+
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set environment variables
+        id: set-vars
+        run: |
+          if [ "${{ steps.set-env.outputs.environment }}" == "prod" ]; then
+            echo "bucket_name=note-app.kanare.dev" >> $GITHUB_OUTPUT
+            echo "domain_name=note-app.kanare.dev" >> $GITHUB_OUTPUT
+            echo "api_base_url=https://api.note-app.kanare.dev" >> $GITHUB_OUTPUT
+          else
+            echo "bucket_name=dev.note-app.kanare.dev" >> $GITHUB_OUTPUT
+            echo "domain_name=dev.note-app.kanare.dev" >> $GITHUB_OUTPUT
+            echo "api_base_url=https://api-dev.note-app.kanare.dev" >> $GITHUB_OUTPUT
+          fi
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
@@ -29,9 +67,43 @@ jobs:
 
       - name: Check if S3 bucket exists
         run: |
-          if ! aws s3 ls "s3://${{ env.BUCKET_NAME }}" > /dev/null 2>&1; then
-            echo "S3バケットが存在しないため、デプロイはスキップします";
-            exit 0
+          if ! aws s3 ls "s3://${{ steps.set-vars.outputs.bucket_name }}" > /dev/null 2>&1; then
+            echo "❌ S3バケット ${{ steps.set-vars.outputs.bucket_name }} が存在しないため、デプロイをスキップします"
+            echo "💡 先にTerraformで ${{ steps.set-env.outputs.environment }} 環境のインフラを構築してください"
+            exit 1
+          fi
+          echo "✅ S3バケット ${{ steps.set-vars.outputs.bucket_name }} が見つかりました"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Get Cognito configuration from Terraform outputs
+        id: get-cognito
+        run: |
+          cd terraform/environments/${{ steps.set-env.outputs.environment }}
+
+          # Terraform init (backend設定を読み込むため)
+          terraform init > /dev/null 2>&1 || true
+
+          # Terraform outputsから値を取得
+          USER_POOL_ID=$(terraform output -raw cognito_user_pool_id 2>/dev/null || echo "")
+          USER_POOL_CLIENT_ID=$(terraform output -raw cognito_user_pool_client_id 2>/dev/null || echo "")
+
+          if [ -z "$USER_POOL_ID" ] || [ -z "$USER_POOL_CLIENT_ID" ]; then
+            echo "⚠️ Terraform outputsからCognito設定を取得できませんでした。Secretsから取得します..."
+            if [ "${{ steps.set-env.outputs.environment }}" == "prod" ]; then
+              echo "user_pool_id=${{ secrets.VITE_USER_POOL_ID }}" >> $GITHUB_OUTPUT
+              echo "user_pool_client_id=${{ secrets.VITE_USER_POOL_CLIENT_ID }}" >> $GITHUB_OUTPUT
+            else
+              echo "user_pool_id=${{ secrets.VITE_USER_POOL_ID_DEV }}" >> $GITHUB_OUTPUT
+              echo "user_pool_client_id=${{ secrets.VITE_USER_POOL_CLIENT_ID_DEV }}" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "✅ Terraform outputsからCognito設定を取得しました"
+            echo "user_pool_id=$USER_POOL_ID" >> $GITHUB_OUTPUT
+            echo "user_pool_client_id=$USER_POOL_CLIENT_ID" >> $GITHUB_OUTPUT
           fi
 
       - name: Install dependencies
@@ -44,10 +116,59 @@ jobs:
           cd frontend
           npm run build
         env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL || 'https://api.note-app.kanare.dev' }}
-          VITE_AWS_REGION: ${{ secrets.VITE_AWS_REGION || 'ap-northeast-1' }}
-          VITE_USER_POOL_ID: ${{ secrets.VITE_USER_POOL_ID }}
-          VITE_USER_POOL_CLIENT_ID: ${{ secrets.VITE_USER_POOL_CLIENT_ID }}
+          VITE_API_BASE_URL: ${{ steps.set-vars.outputs.api_base_url }}
+          VITE_AWS_REGION: ap-northeast-1
+          VITE_USER_POOL_ID: ${{ steps.get-cognito.outputs.user_pool_id }}
+          VITE_USER_POOL_CLIENT_ID: ${{ steps.get-cognito.outputs.user_pool_client_id }}
 
       - name: Sync static files to S3
-        run: aws s3 sync frontend/dist/ s3://${{ env.BUCKET_NAME }}/ --delete
+        run: |
+          aws s3 sync frontend/dist/ s3://${{ steps.set-vars.outputs.bucket_name }}/ --delete
+          echo "✅ デプロイ完了: https://${{ steps.set-vars.outputs.domain_name }}"
+
+      - name: Get CloudFront distribution ID
+        id: get-cloudfront
+        run: |
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Aliases.Items[?contains(@, '${{ steps.set-vars.outputs.domain_name }}')]].Id | [0]" \
+            --output text)
+
+          if [ "$DISTRIBUTION_ID" != "None" ] && [ -n "$DISTRIBUTION_ID" ]; then
+            echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+            echo "✅ CloudFront Distribution ID: $DISTRIBUTION_ID"
+          else
+            echo "⚠️ CloudFront distributionが見つかりませんでした"
+            echo "distribution_id=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Invalidate CloudFront cache
+        if: steps.get-cloudfront.outputs.distribution_id != ''
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ steps.get-cloudfront.outputs.distribution_id }} \
+            --paths "/*"
+          echo "✅ CloudFrontキャッシュを無効化しました"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `### 🚀 Static Site Deployed to **${{ steps.set-env.outputs.environment }}** environment
+
+            **Preview URL**: https://${{ steps.set-vars.outputs.domain_name }}
+
+            **Environment Details**:
+            - S3 Bucket: \`${{ steps.set-vars.outputs.bucket_name }}\`
+            - API URL: \`${{ steps.set-vars.outputs.api_base_url }}\`
+            - CloudFront: ${steps.get-cloudfront.outputs.distribution_id ? '✅ Cache invalidated' : '⚠️ No distribution found'}
+
+            *Deployed by: @${{ github.actor }}*`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
