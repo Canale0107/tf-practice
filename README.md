@@ -8,7 +8,7 @@
 ## プロジェクト概要
 
 本リポジトリは「パーソナルノート/メモアプリ」を AWS インフラ（サーバーレス/モダン CI/CD）と Terraform で実践する学習用サンプルです。
-主要な AWS サービスと IaC の設計・運用を、実用性ある形で段階的に習得できます。
+主要な AWS サービスと IaC の設計・運用を、実用性ある形で段階的に習得することを目的としています。
 
 ### なぜこのプロジェクト？
 
@@ -85,8 +85,8 @@
 - **Lambda**: API バックエンド（Python）
 - **DynamoDB**: NoSQL DB（NoteTable）
 - **ACM**: SSL/TLS 証明書管理
-- **Cognito**: ユーザー認証（予定）
-- **CodeBuild/CodePipeline**: CI/CD（予定）
+- **Cognito**: ユーザー認証
+- **WAF**: DDoS対策（予定）
 
 ### Cloudflare（DNS 管理）
 
@@ -195,6 +195,5 @@ cloudflare_zone_id    = "your-zone-id"
 ## 設計ドキュメント・背景
 
 - [docs/project-proposal.md](docs/project-proposal.md): アイデア/要件/仕様詳細
-- [docs/goal_structure_20251217.md](docs/goal_structure_20251217.md): 目標ディレクトリ構成・進捗ロードマップ
 - [adr/](adr/): 主要意思決定ドキュメント
 - [diagrams/](diagrams/): draw.io 構成図・svg・設計メモ

@@ -318,12 +318,13 @@ aws s3 sync frontend/dist/ s3://note-app.kanare.dev/ --delete
 
 - [Cloudflare Terraform導入ガイド](cloudflare-terraform-guide.md) - DNS設定の完全自動化
 - [デプロイガイド](deployment-guide.md) - 初回デプロイの手順
-- [静的サイトデプロイマニュアル](static-site-deploy-manual.md) - S3へのファイルアップロード方法
 
 ---
 
 **更新日**: 2025年12月20日  
 **バージョン**: 1.0
+
+
 
 
 

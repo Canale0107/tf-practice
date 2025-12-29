@@ -128,7 +128,6 @@ terraform output
 > 将来的に他リソース（サブネット、IGW、S3、Lambda など）でも同じタグ設計と命名規則を採用してください。
 
 今後はここに 1 つずつリソースを追加・発展させていきます。
-最終的には docs/goal_structure_20251217.md を目指します。
 
 ---
 
@@ -181,7 +180,6 @@ Dev環境でテストした変更をProd環境に適用する手順：
 - [../../../docs/deployment-guide.md](../../../docs/deployment-guide.md) - 初回デプロイの詳細手順
 - [../../../docs/rebuild-guide.md](../../../docs/rebuild-guide.md) - destroy→apply時の手順
 - [../../../docs/cloudflare-terraform-guide.md](../../../docs/cloudflare-terraform-guide.md) - DNS自動管理の設定
-- [../../../docs/rate-limiting-setup.md](../../../docs/rate-limiting-setup.md) - API Gatewayのレート制限
 - [../../../adr/](../../../adr/) - 設計決定の記録
 
 ---

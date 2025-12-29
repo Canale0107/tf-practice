@@ -2,10 +2,16 @@
 
 このガイドでは、Terraformを使用してAWSインフラを構築する手順を説明します。
 
-> **📌 重要**: 2025年12月より、本プロジェクトはDev/Prod環境を完全分離しています。
-> 詳細は [terraform/MIGRATION_GUIDE.md](../terraform/MIGRATION_GUIDE.md) を参照してください。
->
-> このガイドは基本的な手順を説明していますが、**環境分離後の最新の構成については上記ガイドを優先してください。**
+## 📋 環境構成について
+
+本プロジェクトは**Dev/Prod環境を完全分離**しています：
+
+- **Dev環境**: `dev.note-app.kanare.dev` - 開発・テスト用（自由に破棄・再構築可能）
+- **Prod環境**: `note-app.kanare.dev` - 本番環境（lifecycle保護あり）
+
+各環境は独立したTerraform Stateで管理され、完全に分離されたAWSリソースを持ちます。
+
+詳細: [terraform/MIGRATION_GUIDE.md](../terraform/MIGRATION_GUIDE.md)
 
 ## 前提条件
 
@@ -13,8 +19,9 @@
 - AWS CLIがインストール・設定済み
 - Terraform >= 1.0 がインストール済み
 - 適切なAWS認証情報が設定されている
+- （オプション）Cloudflareアカウント（DNS自動管理を使用する場合）
 
-## セットアップ
+## セットアップ手順
 
 ### 1. AWS認証情報の設定
 
@@ -31,58 +38,86 @@ export AWS_SECRET_ACCESS_KEY=your-secret-key
 export AWS_DEFAULT_REGION=ap-northeast-1
 ```
 
-### 2. Backend Setupの実行（必須）
+### 2. Backend Setupの実行（初回のみ）
 
-**重要**: 本プロジェクトではS3バックエンドが必須です。
+**重要**: 本プロジェクトではS3バックエンドが必須です。初回のみ実行してください。
 
 ```bash
-# Backend用のリソースを作成（初回のみ）
+# Backend用のリソースを作成
 cd terraform/backend-setup
 terraform init
 terraform apply
 ```
 
 これにより以下が作成されます：
-- S3バケット: `kanare-terraform-state-bucket`
-- DynamoDBテーブル: `terraform-state-locks`
+- S3バケット: `kanare-terraform-state-bucket`（バージョニング有効）
+- DynamoDBテーブル: `terraform-state-locks`（State lock用）
 
 詳細: [terraform/backend-setup/README.md](../terraform/backend-setup/README.md)
 
-### 3. 環境の選択と変数の設定
+### 3. 環境の選択
 
-**Dev環境の場合**:
+どちらの環境をセットアップするか選択します：
+
+#### Dev環境の場合（推奨：最初はDevから）
+
 ```bash
 cd terraform/environments/dev
-cp terraform.tfvars.example terraform.tfvars
-# terraform.tfvars を編集
-# env = "dev"
-# domain_name = "dev.note-app.kanare.dev"
-# api_domain_name = "api-dev.note-app.kanare.dev"
 ```
 
-**Prod環境の場合**:
+#### Prod環境の場合
+
 ```bash
 cd terraform/environments/prod
-cp terraform.tfvars.example terraform.tfvars
-# terraform.tfvars を編集
-# env = "prod"
-# domain_name = "note-app.kanare.dev"
-# api_domain_name = "api.note-app.kanare.dev"
 ```
 
-### 4. Terraformの初期化
+### 4. 変数ファイルの設定
+
+```bash
+# サンプルファイルをコピー
+cp terraform.tfvars.example terraform.tfvars
+
+# 編集して必要な値を設定
+vim terraform.tfvars  # またはお好きなエディタ
+```
+
+**必須の変数**:
+- `env`: 環境名（dev または prod）
+- `domain_name`: 静的サイトのドメイン
+- `api_domain_name`: APIのドメイン
+
+**オプションの変数**（Cloudflare DNS自動管理を使用する場合）:
+- `enable_cloudflare_dns`: true に設定
+- `cloudflare_api_token`: CloudflareのAPIトークン
+- `cloudflare_zone_id`: CloudflareのZone ID
+
+詳細: [cloudflare-terraform-guide.md](cloudflare-terraform-guide.md)
+
+### 5. Terraformの初期化
 
 ```bash
 terraform init
 ```
 
-### 5. 実行計画の確認
+初回実行時、S3バックエンドの設定が完了します。
+
+### 6. 実行計画の確認
 
 ```bash
 terraform plan
 ```
 
-### 6. インフラの作成
+作成されるリソースを確認します：
+- CloudFront Distribution
+- S3バケット（静的サイト用）
+- ACM証明書（2つ：静的サイト用、API用）
+- API Gateway（カスタムドメイン、レート制限付き）
+- Lambda関数
+- DynamoDB テーブル
+- Cognito User Pool
+- Cloudflare DNSレコード（有効化している場合）
+
+### 7. インフラの作成
 
 ```bash
 terraform apply
@@ -90,79 +125,110 @@ terraform apply
 
 確認を求められたら `yes` を入力します。
 
-## リソースの確認
+**注意**:
+- ACM証明書の検証には数分～10分程度かかります
+- Cloudflare DNSレコードの伝播にも時間がかかる場合があります
+- 全体で15～20分程度かかることがあります
 
-デプロイ後、以下のコマンドで出力を確認できます：
+## デプロイ後の確認
+
+### 出力値の確認
 
 ```bash
 terraform output
 ```
 
 主な出力：
-- `api_gateway_url`: API GatewayのURL
-- `s3_website_endpoint`: S3静的Webサイトのエンドポイント
+- `cloudfront_domain_name`: CloudFrontのドメイン
+- `api_gateway_custom_domain`: APIのカスタムドメイン
 - `cognito_user_pool_id`: Cognito User Pool ID
+- `cognito_user_pool_client_id`: Cognito Client ID
+- `dynamodb_table_name`: DynamoDBテーブル名
 
-## テスト
-
-### APIのテスト
+### ドメインへのアクセス確認
 
 ```bash
-# API GatewayのURLを取得
-API_URL=$(terraform output -raw api_gateway_url)
+# 静的サイトにアクセス（ブラウザまたはcurl）
+# Dev環境の場合
+curl -I https://dev.note-app.kanare.dev
 
-# ルートエンドポイントのテスト
-curl $API_URL/
-
-# ユーザー一覧の取得
-curl $API_URL/users
-
-# ユーザーの作成
-curl -X POST $API_URL/users \
-  -H "Content-Type: application/json" \
-  -d '{"userId":"user1","email":"test@example.com","name":"Test User"}'
+# Prod環境の場合
+curl -I https://note-app.kanare.dev
 ```
 
-### S3静的ホスティングのテスト
+### APIエンドポイントの確認
 
 ```bash
-# サンプルHTMLファイルをアップロード
-cat > index.html <<EOF
-<!DOCTYPE html>
-<html>
-<head>
-    <title>MVP Web App</title>
-</head>
-<body>
-    <h1>Welcome to MVP Web App</h1>
-    <p>API Gateway URL: <span id="api-url"></span></p>
-    <script>
-        document.getElementById('api-url').textContent = '$API_URL';
-    </script>
-</body>
-</html>
+# APIのヘルスチェック
+# Dev環境の場合
+curl https://api-dev.note-app.kanare.dev/
+
+# Prod環境の場合
+curl https://api.note-app.kanare.dev/
+```
+
+**注意**: APIエンドポイントはCognito認証が必要です。認証なしでアクセスすると401エラーが返ります。
+
+## フロントエンドのデプロイ
+
+インフラ構築後、フロントエンドをデプロイします：
+
+### 1. 環境変数の設定
+
+```bash
+cd frontend
+
+# Dev環境の場合
+cat > .env.production <<EOF
+VITE_API_BASE_URL=https://api-dev.note-app.kanare.dev
+VITE_AWS_REGION=ap-northeast-1
+VITE_USER_POOL_ID=$(cd ../terraform/environments/dev && terraform output -raw cognito_user_pool_id)
+VITE_USER_POOL_CLIENT_ID=$(cd ../terraform/environments/dev && terraform output -raw cognito_user_pool_client_id)
 EOF
-
-# S3バケット名を取得
-BUCKET_NAME=$(terraform output -raw s3_bucket_id)
-
-# ファイルをアップロード
-aws s3 cp index.html s3://$BUCKET_NAME/index.html
-
-# 静的ホスティングのURLを取得
-WEBSITE_URL=$(terraform output -raw s3_website_endpoint)
-echo "Website URL: http://$WEBSITE_URL"
 ```
 
-## クリーンアップ
-
-インフラを削除する場合：
+### 2. ビルド
 
 ```bash
-terraform destroy
+npm ci
+npm run build
 ```
+
+### 3. S3へのデプロイ
+
+```bash
+# Dev環境の場合
+aws s3 sync dist/ s3://dev.note-app.kanare.dev/ --delete
+
+# CloudFrontのキャッシュを無効化
+DISTRIBUTION_ID=$(cd ../terraform/environments/dev && terraform output -raw cloudfront_distribution_id)
+aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+```
+
+**注意**: 本番環境ではGitHub Actionsで自動デプロイされます。詳細: [github-actions-setup.md](github-actions-setup.md)
 
 ## トラブルシューティング
+
+### ACM証明書の検証が完了しない
+
+```bash
+# DNSレコードの確認
+terraform output
+
+# Cloudflare DNSが有効化されている場合は自動で設定されます
+# 手動の場合は、出力されたCNAMEレコードをCloudflareに追加してください
+```
+
+### CloudFrontで403エラーが返る
+
+S3バケットにファイルがアップロードされているか確認：
+
+```bash
+BUCKET_NAME=$(terraform output -raw s3_bucket_id)
+aws s3 ls s3://$BUCKET_NAME/
+```
+
+ファイルがない場合は、フロントエンドをビルド・デプロイしてください。
 
 ### Lambda関数のエラー
 
@@ -173,19 +239,43 @@ LAMBDA_NAME=$(terraform output -raw lambda_function_name)
 aws logs tail /aws/lambda/$LAMBDA_NAME --follow
 ```
 
-### API Gatewayのエラー
-
-API Gatewayのログを確認：
+### State Lockエラー
 
 ```bash
-API_ID=$(terraform output -raw api_gateway_id)
-aws logs describe-log-groups --log-group-name-prefix "/aws/apigateway/$API_ID"
+# DynamoDBのLockを確認
+aws dynamodb scan --table-name terraform-state-locks
+
+# 必要に応じてLockを手動解除（注意して実行）
+terraform force-unlock <LOCK_ID>
 ```
+
+## 環境の削除
+
+### Dev環境の場合（自由に削除可能）
+
+```bash
+cd terraform/environments/dev
+terraform destroy
+```
+
+### Prod環境の場合（要注意）
+
+Prod環境には重要なリソースにlifecycle保護が設定されています。削除するには、まず`main.tf`の該当箇所から`prevent_destroy`を手動で削除する必要があります。
+
+詳細: [terraform/MIGRATION_GUIDE.md](../terraform/MIGRATION_GUIDE.md)
 
 ## 次のステップ
 
-1. ADRを読んで設計決定を確認: `adr/`
-2. モジュールをカスタマイズ: `modules/`
-3. CI/CDパイプラインを設定: `ci-cd/`
-4. 設計書を確認: `docs/`
+1. **フロントエンドの開発**: `frontend/` ディレクトリでReactアプリを開発
+2. **Lambda関数の開発**: `lambda-functions/api-handler.py` でAPIロジックを実装
+3. **CI/CDの設定**: [github-actions-setup.md](github-actions-setup.md) を参照
+4. **設計ドキュメントの確認**:
+   - [adr/](../adr/) - 設計決定の記録
+   - [terraform/MIGRATION_GUIDE.md](../terraform/MIGRATION_GUIDE.md) - 環境分離の詳細
 
+## 参考ドキュメント
+
+- [deployment-guide.md](deployment-guide.md) - より詳細なデプロイガイド
+- [cloudflare-terraform-guide.md](cloudflare-terraform-guide.md) - Cloudflare DNS自動管理
+- [rebuild-guide.md](rebuild-guide.md) - インフラ再構築ガイド
+- [cicd-guide.md](cicd-guide.md) - CI/CD運用ガイド
