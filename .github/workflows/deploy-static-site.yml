@@ -202,6 +202,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const distributionId = '${{ steps.get-cloudfront.outputs.distribution_id }}';
+            const cloudFrontStatus = distributionId ? '✅ Cache invalidated' : '⚠️ No distribution found';
+
             const output = `### 🚀 Static Site Deployed to **${{ steps.set-env.outputs.environment }}** environment
 
             **Preview URL**: https://${{ steps.set-vars.outputs.domain_name }}
@@ -209,7 +212,7 @@ jobs:
             **Environment Details**:
             - S3 Bucket: \`${{ steps.set-vars.outputs.bucket_name }}\`
             - API URL: \`${{ steps.set-vars.outputs.api_base_url }}\`
-            - CloudFront: ${steps.get-cloudfront.outputs.distribution_id ? '✅ Cache invalidated' : '⚠️ No distribution found'}
+            - CloudFront: ${cloudFrontStatus}
 
             *Deployed by: @${{ github.actor }}*`;
 
