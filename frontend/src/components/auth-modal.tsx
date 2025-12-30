@@ -287,7 +287,7 @@ export function AuthModal() {
             </h2>
             <p className="text-muted-foreground text-pretty">
               {mode === "login"
-                ? "ノートにアクセスするためにサインインしてください"
+                ? "ノートにアクセスするためにログインしてください"
                 : mode === "signup"
                 ? "今日から思考を整理しましょう"
                 : "メールに送信された確認コードを入力してください"}
@@ -440,13 +440,13 @@ export function AuthModal() {
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   {mode === "login"
-                    ? "サインイン中..."
+                    ? "ログイン中..."
                     : mode === "signup"
                     ? "アカウント作成中..."
                     : "確認中..."}
                 </span>
               ) : mode === "login" ? (
-                "サインイン"
+                "ログイン"
               ) : mode === "signup" ? (
                 "アカウント作成"
               ) : (
@@ -468,7 +468,7 @@ export function AuthModal() {
                   className="text-primary hover:text-primary/80 font-medium transition-colors duration-200"
                   disabled={isLoading}
                 >
-                  {mode === "login" ? "サインアップ" : "サインイン"}
+                  {mode === "login" ? "サインアップ" : "ログイン"}
                 </button>
               </p>
             </div>
@@ -487,7 +487,7 @@ export function AuthModal() {
                 className="text-sm text-primary hover:text-primary/80 font-medium transition-colors duration-200"
                 disabled={isLoading}
               >
-                サインインに戻る
+                ログインに戻る
               </button>
             </div>
           )}
