@@ -22,8 +22,7 @@ import { FaRegCopyright } from "react-icons/fa";
 function AppContent() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { authMode, repository, openAuthModal, logout, setAuthMode } =
-    useAuth();
+  const { authMode, repository, logout, setAuthMode } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [editingNote, setEditingNote] = useState<Note | null>(null);
